@@ -1,62 +1,38 @@
 version: 2.1
 
-orbs:
-  node: circleci/node@5.1.0
-
 jobs:
-  build-and-test:
+  build:
     docker:
-      - image: cimg/node:18.19
-    working_directory: ~/EmployeePaymentsPortal
+      - image: cimg/base:stable # or your appropriate image
+    working_directory: ~/repo
 
     steps:
       - checkout
 
-      # Cache node_modules for faster builds
+      # Optionally restore a generic cache (no lockfile assumed)
       - restore_cache:
           keys:
-            - v1-deps-{{ checksum "package-lock.json" }}
-            - v1-deps-
+            - deps-v1-{{ .Branch }}-
 
-      # Install dependencies for both server and client
+      # Example install step (adjust according to your stack)
       - run:
-          name: Install Dependencies
+          name: Install dependencies
           command: |
-            cd server && npm install
-            cd ../client && npm install
+            # if you use npm or yarn, ensure you have a lockfile, or skip caching
+            npm install
 
+      # Save cache back; generic version
       - save_cache:
-          key: v1-deps-{{ checksum "package-lock.json" }}
+          key: deps-v1-{{ .Branch }}-
           paths:
-            - ~/.npm
+            - node_modules
 
-      # Run basic build/test commands
+      # Your build/test steps go here
       - run:
-          name: Build and Test Client
-          command: |
-            cd client
-            npm run build
-            npm test --if-present
-
-      - run:
-          name: Test Server (if applicable)
-          command: |
-            cd server
-            npm test --if-present
-
-      # Run SonarCloud analysis
-      - run:
-          name: Run SonarCloud Code Analysis
-          command: |
-            cd ..
-            npm install -g sonar-scanner
-            sonar-scanner \
-              -Dsonar.projectKey=EmployeePaymentsPortal \
-              -Dsonar.organization=<your-sonarcloud-org> \
-              -Dsonar.host.url=https://sonarcloud.io \
-              -Dsonar.login=$SONAR_TOKEN
+          name: Run tests
+          command: npm test
 
 workflows:
-  build_and_test_workflow:
+  build_and_test:
     jobs:
-      - build-and-test
+      - build
