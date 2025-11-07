@@ -1,0 +1,61 @@
+version: 2.1
+
+orbs:
+  node: circleci/node@5.0.2
+
+jobs:
+  build-and-test:
+    docker:
+      - image: cimg/node:20.10
+    working_directory: ~/repo
+    steps:
+      - checkout
+
+      # Install backend dependencies
+      - run:
+          name: Install Backend Dependencies
+          command: |
+            cd server
+            npm install
+
+      # Install frontend dependencies
+      - run:
+          name: Install Frontend Dependencies
+          command: |
+            cd client
+            npm install
+
+      # Run backend tests (Jest + Supertest)
+      - run:
+          name: Run Backend Tests
+          command: |
+            cd server
+            npm test
+
+      # Run frontend build
+      - run:
+          name: Build Frontend
+          command: |
+            cd client
+            npm run build
+
+      # Security Audit
+      - run:
+          name: Run Security Audit
+          command: |
+            cd server
+            npm audit --audit-level=moderate || true
+
+      # SonarQube Static Code Analysis (if configured)
+      - run:
+          name: Run SonarQube Analysis
+          command: |
+            if [ -f sonar-project.properties ]; then
+              npm install -g sonar-scanner
+              sonar-scanner
+            fi
+
+workflows:
+  build_and_test_workflow:
+    jobs:
+      - build-and-test
