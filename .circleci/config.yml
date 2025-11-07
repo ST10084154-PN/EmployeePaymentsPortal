@@ -7,7 +7,7 @@ jobs:
   build-and-test:
     docker:
       - image: cimg/node:18.19
-    working_directory: ~/EmployeePaymentsPortal_Full
+    working_directory: ~/EmployeePaymentsPortal
 
     steps:
       - checkout
