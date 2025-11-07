@@ -3,34 +3,42 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/base:stable # or your appropriate image
+      - image: cimg/node:20.5-browsers  # Node + npm preinstalled
     working_directory: ~/repo
 
     steps:
       - checkout
 
-      # Optionally restore a generic cache (no lockfile assumed)
+      # Restore cache (generic key, no package-lock.json required)
       - restore_cache:
           keys:
             - deps-v1-{{ .Branch }}-
 
-      # Example install step (adjust according to your stack)
+      # Install dependencies (if applicable)
       - run:
           name: Install dependencies
           command: |
-            # if you use npm or yarn, ensure you have a lockfile, or skip caching
-            npm install
+            if [ -f package.json ]; then
+              npm install
+            else
+              echo "No package.json found, skipping npm install."
+            fi
 
-      # Save cache back; generic version
+      # Save cache
       - save_cache:
           key: deps-v1-{{ .Branch }}-
           paths:
             - node_modules
 
-      # Your build/test steps go here
+      # Run your tests/builds (adjust commands as needed)
       - run:
           name: Run tests
-          command: npm test
+          command: |
+            if [ -f package.json ]; then
+              npm test
+            else
+              echo "No tests to run."
+            fi
 
 workflows:
   build_and_test:
