@@ -3,42 +3,36 @@ version: 2.1
 jobs:
   build:
     docker:
-      - image: cimg/node:20.5-browsers  # Node + npm preinstalled
+      - image: cimg/base:stable  # Minimal base image
     working_directory: ~/repo
 
     steps:
-      - checkout
+      - checkout  # Pulls your repository
 
-      # Restore cache (generic key, no package-lock.json required)
+      # Restore a generic cache if you want (optional)
       - restore_cache:
           keys:
-            - deps-v1-{{ .Branch }}-
+            - generic-deps-v1-{{ .Branch }}-
 
-      # Install dependencies (if applicable)
+      # Example build / setup steps
       - run:
-          name: Install dependencies
+          name: Prepare build
           command: |
-            if [ -f package.json ]; then
-              npm install
-            else
-              echo "No package.json found, skipping npm install."
-            fi
+            echo "No Node.js required."
+            echo "Add any build or setup commands here, e.g., scripts or database setup."
 
-      # Save cache
+      # Save generic cache (optional)
       - save_cache:
-          key: deps-v1-{{ .Branch }}-
+          key: generic-deps-v1-{{ .Branch }}-
           paths:
-            - node_modules
+            - some/dependency/path  # optional, remove if not needed
 
-      # Run your tests/builds (adjust commands as needed)
+      # Example test step
       - run:
           name: Run tests
           command: |
-            if [ -f package.json ]; then
-              npm test
-            else
-              echo "No tests to run."
-            fi
+            echo "Add your actual test commands here."
+            echo "Currently, no Node/npm commands are required."
 
 workflows:
   build_and_test:
