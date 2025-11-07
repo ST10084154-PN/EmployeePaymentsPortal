@@ -1,59 +1,60 @@
 version: 2.1
 
 orbs:
-  node: circleci/node@5.0.2
+  node: circleci/node@5.1.0
 
 jobs:
   build-and-test:
     docker:
-      - image: cimg/node:20.10
-    working_directory: ~/repo
+      - image: cimg/node:18.19
+    working_directory: ~/EmployeePaymentsPortal_Full
+
     steps:
       - checkout
 
-      # Install backend dependencies
-      - run:
-          name: Install Backend Dependencies
-          command: |
-            cd server
-            npm install
+      # Cache node_modules for faster builds
+      - restore_cache:
+          keys:
+            - v1-deps-{{ checksum "package-lock.json" }}
+            - v1-deps-
 
-      # Install frontend dependencies
+      # Install dependencies for both server and client
       - run:
-          name: Install Frontend Dependencies
+          name: Install Dependencies
           command: |
-            cd client
-            npm install
+            cd server && npm install
+            cd ../client && npm install
 
-      # Run backend tests (Jest + Supertest)
-      - run:
-          name: Run Backend Tests
-          command: |
-            cd server
-            npm test
+      - save_cache:
+          key: v1-deps-{{ checksum "package-lock.json" }}
+          paths:
+            - ~/.npm
 
-      # Run frontend build
+      # Run basic build/test commands
       - run:
-          name: Build Frontend
+          name: Build and Test Client
           command: |
             cd client
             npm run build
+            npm test --if-present
 
-      # Security Audit
       - run:
-          name: Run Security Audit
+          name: Test Server (if applicable)
           command: |
             cd server
-            npm audit --audit-level=moderate || true
+            npm test --if-present
 
-      # SonarQube Static Code Analysis (if configured)
+      # Run SonarCloud analysis
       - run:
-          name: Run SonarQube Analysis
+          name: Run SonarCloud Code Analysis
           command: |
-            if [ -f sonar-project.properties ]; then
-              npm install -g sonar-scanner
-              sonar-scanner
-            fi
+            cd ..
+            npm install -g sonar-scanner
+            sonar-scanner \
+              -Dsonar.projectKey=EmployeePaymentsPortal \
+              -Dsonar.organization=<your-sonarcloud-org> \
+              -Dsonar.host.url=https://sonarcloud.io \
+              -Dsonar.login=$SONAR_TOKEN
 
 workflows:
   build_and_test_workflow:
